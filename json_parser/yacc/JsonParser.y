@@ -107,11 +107,13 @@ KeyValueSequence
 : String COLON JsonObject {
     JsonDict* tmp = new JsonDict(yylineno, "JsonDict");
     tmp->put(dynamic_cast<JsonLiteral*>($1)->message, $3);
+    delete $1;
     $$ = tmp;
 }
 | KeyValueSequence COMMA String COLON JsonObject {
     JsonDict* tmp = dynamic_cast<JsonDict*>($1);
     tmp->put(dynamic_cast<JsonLiteral*>($3)->message, $5);
+    delete $3;
     $$ = tmp;
 }
 

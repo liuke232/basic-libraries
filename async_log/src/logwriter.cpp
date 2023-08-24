@@ -29,8 +29,6 @@ LogWriter::~LogWriter() {
     // 等待线程结束
     if (log_writer_thread.joinable())
         log_writer_thread.join();
-    // 如果备用队列还有数据，将备用队列倒空
-    dump_queue(msg_queue_standby);
     // 关闭文件输出流
     ofs.close();
     // 销毁主备日志队列
@@ -50,7 +48,7 @@ void LogWriter::run() {
         
         {
             // 获取消息队列同步锁
-            std::unique_lock<std::mutex> lock_standby(mutex);
+            std::unique_lock<std::mutex> lock(mutex);
             // 交换主备队列(此时备用队列有数据，待输出；主用队列在上一轮写日志已经清空)
             std::swap(msg_queue_master, msg_queue_standby);
         }
@@ -58,6 +56,9 @@ void LogWriter::run() {
         // 将主用队列倒空
         dump_queue(msg_queue_master);
     } while (is_valid);
+
+    // 如果备用队列还有数据，将备用队列倒空，然后退出线程
+    dump_queue(msg_queue_standby);
 }
 
 // 日志项入队
